@@ -1,0 +1,89 @@
+from numpy import * #导入numpy科学计算模块
+import matplotlib.pyplot as plt
+
+def makeLinearSeparableData(weights, numLines): #产生线性可分的数据
+    w = array(weights) #weights是一个列表，里面存储的是用来产生随机数据的那条直线的法向量
+    numFeatures = len(weights)
+    dataSet = zeros((numLines, numFeatures + 1))#用于创建规模为numLines*（numFeatures+1）的数组，且内容都为0
+                                                 #numFeatures+1是为了在最后一列可以存储该数据点的分类
+                                                # numlines是一个正整数，表示用来创建多少个数据点
+    for i in range(numLines): #遍历dataset里的每一行
+        x = random.rand(1, numFeatures) * 20 - 10#产生一个数组，规模为1行，numFeatures列，每个数都是-10到10的随机数
+        innerProduct = sum(w * x)#计算内积
+        if innerProduct <= 0:
+            dataSet[i] = append(x, -1)#内积小于0，为负例，扩充dataset
+        else:
+            dataSet[i] = append(x, 1)#内积大于0，为正例，扩充dataset
+
+    return dataSet #返回dataset
+
+def plotData(dataSet):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_title('Linear separable data set')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    labels = array(dataSet[:,2])
+    idx_1 = where(dataSet[:,2]==1)#找出正例的行的下标
+    p1 = ax.scatter(dataSet[idx_1,0], dataSet[idx_1,1], marker='o', color='g', label=1, s=20)
+    idx_2 = where(dataSet[:,2]==-1)
+    p2 = ax.scatter(dataSet[idx_2,0], dataSet[idx_2,1], marker='x', color='r', label=2, s=20)
+    plt.legend(loc = 'upper right')
+    plt.show()
+
+data=makeLinearSeparableData([6,1],100)
+print(data)
+plotData(data)
+
+
+def train(dataSet, plot = False):#只返回最后的结果，不绘制散点图
+    numLines = dataSet.shape[0]
+    numFeatures = dataSet.shape[1]
+    w = zeros((1, numFeatures - 1)) # 数组w保存权重向量，最后一列是分类标签，分类标签不是特征
+    w[0][0]=1
+    separated = False
+
+    i = 0;
+    count=0;
+    p1=0;
+    while not separated and i < numLines:#已经完全将正例和负例分开，或者i的值超过样本的数量，满足其一退出循环；
+        if dataSet[i][-1] * sum(w * dataSet[i,0:-1]) <= 0:#如果分类错误;规范化；训练算法的核心，即梯度下降
+            w = w + 0.01* dataSet[i][-1] * dataSet[i,0:-1]#更新权重向量,w是一个二维数组;规范化
+            separated= False #设置为未完全分开
+            i = 0#重新开始遍历每个数据点
+            count += 1
+        else:
+            i += 1 #如果分类正确，检查下一个数据点
+            p1+=1
+
+    print(count)
+    print(i)
+
+    if plot == True: #绘制分类器及其法向量（权重向量）
+        import matplotlib.pyplot as plt
+        from matplotlib.lines import Line2D
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_title('Linear separable data set')
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        labels = array(dataSet[:,2])
+        idx_1 = where(dataSet[:,2]==1)
+        p1 = ax.scatter(dataSet[idx_1,0], dataSet[idx_1,1],
+            marker='o', color='g', label=1, s=20)
+        idx_2 = where(dataSet[:,2]==-1)
+        p2 = ax.scatter(dataSet[idx_2,0], dataSet[idx_2,1],
+            marker='x', color='r', label=2, s=20)
+        x = w[0][0] / abs(w[0][0]) * 10
+        y = w[0][1] / abs(w[0][0]) * 10
+        ann = ax.annotate(u"",xy=(x,y),
+            xytext=(0,0),size=20, arrowprops=dict(arrowstyle="-|>"))
+        ys = (-12 * (-w[0][0]) / w[0][1], 12 * (-w[0][0]) / w[0][1])
+        ax.add_line(Line2D((-12, 12), ys, linewidth=1, color='blue'))
+        plt.legend(loc = 'upper right')
+        plt.show()
+
+    return w
+
+train(data,1)
+print(w)
